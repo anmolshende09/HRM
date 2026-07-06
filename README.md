@@ -51,10 +51,14 @@ Runs `backend/utils/seed.js`, which connects to the database configured in `.env
 | Password | `Admin@123` |
 | Role | `admin` |
 
+| Field | Value |
+|---|---|
 | Email | `hr@hrms.local` |
 | Password | `HRManager@123` |
 | Role | `HR Manager` |
 
+| Field | Value |
+|---|---|
 | Email | `employee@hrms.local` |
 | Password | `Employee@123` |
 | Role | `Employee` |
