@@ -1,0 +1,115 @@
+import React, { useEffect, useState } from "react";
+import { TextField, SelectField } from "../common/FormField";
+import Button from "../common/Button";
+import { EMPLOYEE_STATUS } from "../../constants/options";
+import { toInputDate } from "../../utils/format";
+
+const STATUS_OPTIONS = Object.values(EMPLOYEE_STATUS).map((s) => ({
+  value: s,
+  label: s.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+}));
+
+const emptyForm = {
+  employeeId: "",
+  name: "",
+  email: "",
+  phone: "",
+  department: "",
+  designation: "",
+  joiningDate: "",
+  salary: "",
+  status: "active",
+};
+
+export default function EmployeeForm({ initialValues, departments, onSubmit, onCancel, submitting }) {
+  const [form, setForm] = useState(emptyForm);
+  const [errors, setErrors] = useState({});
+  const [photo, setPhoto] = useState(null);
+
+  useEffect(() => {
+    if (initialValues) {
+      setForm({
+        employeeId: initialValues.employeeId || "",
+        name: initialValues.name || "",
+        email: initialValues.email || "",
+        phone: initialValues.phone || "",
+        department: initialValues.department?._id || initialValues.department || "",
+        designation: initialValues.designation || "",
+        joiningDate: toInputDate(initialValues.joiningDate),
+        salary: initialValues.salary ?? "",
+        status: initialValues.status || "active",
+      });
+    } else {
+      setForm(emptyForm);
+    }
+  }, [initialValues]);
+
+  const set = (key) => (e) => setForm({ ...form, [key]: e.target.value });
+
+  const validate = () => {
+    const next = {};
+    if (!form.employeeId) next.employeeId = "Employee ID is required";
+    if (!form.name) next.name = "Name is required";
+    if (!form.email) next.email = "Email is required";
+    if (!form.department) next.department = "Department is required";
+    if (!form.designation) next.designation = "Designation is required";
+    if (!form.joiningDate) next.joiningDate = "Joining date is required";
+    setErrors(next);
+    return Object.keys(next).length === 0;
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!validate()) return;
+
+    const formData = new FormData();
+    Object.entries(form).forEach(([key, value]) => {
+      if (value !== "" && value !== null && value !== undefined) formData.append(key, value);
+    });
+    if (photo) formData.append("profilePicture", photo);
+
+    onSubmit(formData);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <TextField label="Employee ID" required value={form.employeeId} error={errors.employeeId} onChange={set("employeeId")} />
+        <TextField label="Full Name" required value={form.name} error={errors.name} onChange={set("name")} />
+        <TextField label="Email" type="email" required value={form.email} error={errors.email} onChange={set("email")} />
+        <TextField label="Phone" value={form.phone} onChange={set("phone")} />
+        <SelectField
+          label="Department"
+          required
+          placeholder="Select department"
+          value={form.department}
+          error={errors.department}
+          onChange={set("department")}
+          options={departments.map((d) => ({ value: d._id, label: d.name }))}
+        />
+        <TextField label="Designation" required value={form.designation} error={errors.designation} onChange={set("designation")} />
+        <TextField label="Joining Date" type="date" required value={form.joiningDate} error={errors.joiningDate} onChange={set("joiningDate")} />
+        <TextField label="Salary (optional)" type="number" value={form.salary} onChange={set("salary")} />
+        <SelectField label="Status" value={form.status} onChange={set("status")} options={STATUS_OPTIONS} />
+        <div>
+          <label className="block text-caption-strong text-ink-muted80 mb-1.5">Profile Picture (optional)</label>
+          <input
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            onChange={(e) => setPhoto(e.target.files?.[0] || null)}
+            className="w-full text-caption text-ink-muted48 file:mr-3 file:py-2 file:px-3.5 file:rounded-sm file:border-0 file:bg-canvas-parchment file:text-caption-strong file:text-ink-muted80"
+          />
+        </div>
+      </div>
+
+      <div className="flex justify-end gap-3 pt-2">
+        <Button type="button" variant="ghost" onClick={onCancel} disabled={submitting}>
+          Cancel
+        </Button>
+        <Button type="submit" loading={submitting}>
+          {initialValues ? "Save changes" : "Add employee"}
+        </Button>
+      </div>
+    </form>
+  );
+}
