@@ -4,6 +4,7 @@ const {
   createAnnouncement,
   getAnnouncements,
   updateAnnouncement,
+  markRead,
   deleteAnnouncement,
 } = require("../controllers/announcementController");
 const { protect, authorize } = require("../middleware/auth");
@@ -26,5 +27,7 @@ router
   .route("/:id")
   .put(authorize("admin", "hr_manager"), updateAnnouncement)
   .delete(authorize("admin", "hr_manager"), deleteAnnouncement);
+
+router.post("/:id/read", markRead);
 
 module.exports = router;

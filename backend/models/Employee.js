@@ -24,15 +24,28 @@ const employeeSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    company: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Company",
+      required: true,
+    },
+    branch: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Branch",
+    },
     department: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Department",
       required: [true, "Department is required"],
     },
     designation: {
-      type: String,
-      required: [true, "Designation is required"],
-      trim: true,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Designation",
+    },
+    reportingManager: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Employee",
+      default: null,
     },
     joiningDate: {
       type: Date,
@@ -48,7 +61,7 @@ const employeeSchema = new mongoose.Schema(
       default: "active",
     },
     profilePicture: {
-      type: String, // relative path e.g. /uploads/employees/xyz.jpg
+      type: String,
       default: null,
     },
   },

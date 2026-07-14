@@ -1,28 +1,28 @@
 const mongoose = require("mongoose");
 
-const departmentSchema = new mongoose.Schema(
+const awardTypeSchema = new mongoose.Schema(
   {
     company: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Company",
       required: true,
     },
-    branch: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Branch",
-    },
     name: {
       type: String,
-      required: [true, "Department name is required"],
+      required: [true, "Award type name is required"],
       trim: true,
     },
     description: {
       type: String,
       trim: true,
-      default: "",
+    },
+    status: {
+      type: String,
+      enum: ["active", "inactive"],
+      default: "active",
     },
   },
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Department", departmentSchema);
+module.exports = mongoose.model("AwardType", awardTypeSchema);

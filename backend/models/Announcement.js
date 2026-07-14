@@ -2,6 +2,11 @@ const mongoose = require("mongoose");
 
 const announcementSchema = new mongoose.Schema(
   {
+    company: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Company",
+      required: true,
+    },
     title: {
       type: String,
       required: [true, "Title is required"],
@@ -16,6 +21,23 @@ const announcementSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    publishDate: {
+      type: Date,
+      default: Date.now,
+    },
+    expiryDate: {
+      type: Date,
+    },
+    isPinned: {
+      type: Boolean,
+      default: false,
+    },
+    readBy: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

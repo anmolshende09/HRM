@@ -26,6 +26,11 @@ const userSchema = new mongoose.Schema(
       enum: ["admin", "hr_manager", "employee"],
       default: "employee",
     },
+    company: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Company",
+      default: null,
+    },
     // Optional link to an Employee profile (an admin/hr_manager may not have one)
     employee: {
       type: mongoose.Schema.Types.ObjectId,
