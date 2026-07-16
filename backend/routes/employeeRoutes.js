@@ -3,6 +3,7 @@ const router = express.Router();
 const {
   createEmployee,
   getEmployees,
+  getOrgChart,
   getEmployee,
   updateEmployee,
   deleteEmployee,
@@ -17,6 +18,9 @@ router
   .route("/")
   .get(getEmployees)
   .post(authorize("admin", "hr_manager"), upload.single("profilePicture"), employeeRules, validate, createEmployee);
+
+// Must come before /:id — otherwise Express matches "org-chart" as an :id param.
+router.get("/org-chart", getOrgChart);
 
 router
   .route("/:id")

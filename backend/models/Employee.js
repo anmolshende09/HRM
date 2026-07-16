@@ -51,6 +51,13 @@ const employeeSchema = new mongoose.Schema(
       type: String, // relative path e.g. /uploads/employees/xyz.jpg
       default: null,
     },
+    // Self-reference for the Org Chart's manager -> subordinate hierarchy.
+    // null = no manager set (renders as a top-level/root node in the chart).
+    manager: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Employee",
+      default: null,
+    },
   },
   { timestamps: true }
 );

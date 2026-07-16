@@ -20,6 +20,7 @@ export default function Employees() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [employees, setEmployees] = useState([]);
+  const [allEmployees, setAllEmployees] = useState([]); // lightweight list, for the "Reports To" dropdown
   const [departments, setDepartments] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1 });
   const [loading, setLoading] = useState(true);
@@ -50,6 +51,12 @@ export default function Employees() {
   useEffect(() => {
     departmentService.list().then(({ data }) => setDepartments(data.data)).catch(() => {});
   }, []);
+
+  const loadAllEmployees = useCallback(() => {
+    employeeService.orgChart().then(({ data }) => setAllEmployees(data.data)).catch(() => {});
+  }, []);
+
+  useEffect(loadAllEmployees, [loadAllEmployees]);
 
   useEffect(() => {
     loadEmployees(1);
@@ -83,6 +90,7 @@ export default function Employees() {
       }
       closeModal();
       loadEmployees(pagination.page);
+      loadAllEmployees();
     } catch (err) {
       toast.error(err.response?.data?.message || "Something went wrong");
     } finally {
@@ -97,6 +105,7 @@ export default function Employees() {
       toast.success("Employee deleted");
       setDeleteTarget(null);
       loadEmployees(pagination.page);
+      loadAllEmployees();
     } catch (err) {
       toast.error(err.response?.data?.message || "Couldn't delete employee");
     } finally {
@@ -172,6 +181,7 @@ export default function Employees() {
         <EmployeeForm
           initialValues={editing}
           departments={departments}
+          employees={allEmployees}
           onSubmit={handleSubmit}
           onCancel={closeModal}
           submitting={submitting}

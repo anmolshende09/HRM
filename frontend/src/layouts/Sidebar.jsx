@@ -3,6 +3,7 @@ import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard,
   CalendarDays,
+  Network,
   Users,
   Building2,
   CalendarCheck,
@@ -15,6 +16,7 @@ import { MANAGER_ROLES } from "../constants/roles";
 const NAV_ITEMS = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/calendar", label: "Calendar", icon: CalendarDays },
+  { to: "/org-chart", label: "Org Chart", icon: Network },
   { to: "/employees", label: "Employees", icon: Users, managerOnly: true },
   { to: "/departments", label: "Departments", icon: Building2, managerOnly: true },
   { to: "/attendance", label: "Attendance", icon: CalendarCheck },

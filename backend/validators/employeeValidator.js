@@ -11,6 +11,10 @@ const employeeRules = [
   body("phone").optional().trim(),
   body("salary").optional().isNumeric().withMessage("Salary must be a number"),
   body("status").optional().isIn(["active", "inactive", "on_leave"]).withMessage("Invalid status"),
+  body("manager")
+    .optional({ nullable: true, checkFalsy: true })
+    .isMongoId()
+    .withMessage("Manager must be a valid employee"),
 ];
 
 module.exports = { employeeRules, validate };

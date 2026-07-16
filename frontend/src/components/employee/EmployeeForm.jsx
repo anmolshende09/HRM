@@ -19,9 +19,10 @@ const emptyForm = {
   joiningDate: "",
   salary: "",
   status: "active",
+  manager: "",
 };
 
-export default function EmployeeForm({ initialValues, departments, onSubmit, onCancel, submitting }) {
+export default function EmployeeForm({ initialValues, departments, employees = [], onSubmit, onCancel, submitting }) {
   const [form, setForm] = useState(emptyForm);
   const [errors, setErrors] = useState({});
   const [photo, setPhoto] = useState(null);
@@ -38,6 +39,7 @@ export default function EmployeeForm({ initialValues, departments, onSubmit, onC
         joiningDate: toInputDate(initialValues.joiningDate),
         salary: initialValues.salary ?? "",
         status: initialValues.status || "active",
+        manager: initialValues.manager?._id || initialValues.manager || "",
       });
     } else {
       setForm(emptyForm);
@@ -64,12 +66,27 @@ export default function EmployeeForm({ initialValues, departments, onSubmit, onC
 
     const formData = new FormData();
     Object.entries(form).forEach(([key, value]) => {
-      if (value !== "" && value !== null && value !== undefined) formData.append(key, value);
+      // "manager" is always sent, even empty — the backend treats an empty
+      // value as "clear the manager", so omitting it would silently prevent
+      // ever un-assigning someone's manager once set.
+      if (key === "manager" || (value !== "" && value !== null && value !== undefined)) {
+        formData.append(key, value);
+      }
     });
     if (photo) formData.append("profilePicture", photo);
 
     onSubmit(formData);
   };
+
+  // Can't report to yourself, and can't report to someone who (directly)
+  // reports to you — full cycle prevention is a backend concern for later;
+  // this just stops the most obvious mistake at the form level.
+  const managerOptions = [
+    { value: "", label: "No manager" },
+    ...employees
+      .filter((e) => e._id !== initialValues?._id)
+      .map((e) => ({ value: e._id, label: `${e.name} (${e.designation})` })),
+  ];
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -91,6 +108,7 @@ export default function EmployeeForm({ initialValues, departments, onSubmit, onC
         <TextField label="Joining Date" type="date" required value={form.joiningDate} error={errors.joiningDate} onChange={set("joiningDate")} />
         <TextField label="Salary (optional)" type="number" value={form.salary} onChange={set("salary")} />
         <SelectField label="Status" value={form.status} onChange={set("status")} options={STATUS_OPTIONS} />
+        <SelectField label="Reports To (optional)" value={form.manager} onChange={set("manager")} options={managerOptions} />
         <div>
           <label className="block text-caption-strong text-ink-muted80 mb-1.5">Profile Picture (optional)</label>
           <input
