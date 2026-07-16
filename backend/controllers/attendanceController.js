@@ -8,10 +8,10 @@ const startOfDay = (d) => {
   return date;
 };
 
-//  Mark attendance for an employee on a given date (present/absent/etc.)
-//  Upserts so re-marking the same day updates the existing record.
-//  POST /api/attendance
-//  Private (admin, hr_manager);
+// @desc    Mark attendance for an employee on a given date (present/absent/etc.)
+//          Upserts so re-marking the same day updates the existing record.
+// @route   POST /api/attendance
+// @access  Private (admin, hr_manager); employees may mark their own if enabled
 const markAttendance = asyncHandler(async (req, res) => {
   const { employee, date, status, remarks } = req.body;
   const day = startOfDay(date || Date.now());
@@ -25,9 +25,9 @@ const markAttendance = asyncHandler(async (req, res) => {
   res.status(201).json({ success: true, data: record });
 });
 
-// Get attendance history for an employee (or the logged-in employee)
-// GET /api/attendance/history/
-// Private
+// @desc    Get attendance history for an employee (or the logged-in employee)
+// @route   GET /api/attendance/history/:employeeId?from=&to=
+// @access  Private
 const getHistory = asyncHandler(async (req, res) => {
   const { employeeId } = req.params;
   const { from, to } = req.query;
@@ -43,9 +43,9 @@ const getHistory = asyncHandler(async (req, res) => {
   res.json({ success: true, count: records.length, data: records });
 });
 
-// Get today's attendance across all employees (dashboard summary)
-// GET /api/attendance/today
-// Private (admin, hr_manager)
+// @desc    Get today's attendance across all employees (dashboard summary)
+// @route   GET /api/attendance/today
+// @access  Private (admin, hr_manager)
 const getToday = asyncHandler(async (req, res) => {
   const today = startOfDay(Date.now());
   const totalEmployees = await Employee.countDocuments({ status: { $ne: "inactive" } });
@@ -70,9 +70,9 @@ const getToday = asyncHandler(async (req, res) => {
   });
 });
 
-// Get attendance percentage for an employee over a date range
-// GET /api/attendance/percentage/
-//  Private
+// @desc    Get attendance percentage for an employee over a date range
+// @route   GET /api/attendance/percentage/:employeeId?from=&to=
+// @access  Private
 const getPercentage = asyncHandler(async (req, res) => {
   const { employeeId } = req.params;
   const { from, to } = req.query;

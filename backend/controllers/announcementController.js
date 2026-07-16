@@ -1,9 +1,9 @@
 const Announcement = require("../models/Announcement");
 const asyncHandler = require("../utils/asyncHandler");
 
-//  Create an announcement
-//  POST /api/announcements
-//  Private (admin, hr_manager)
+// @desc    Create an announcement
+// @route   POST /api/announcements
+// @access  Private (admin, hr_manager)
 const createAnnouncement = asyncHandler(async (req, res) => {
   const { title, description, date } = req.body;
   const announcement = await Announcement.create({
@@ -15,9 +15,9 @@ const createAnnouncement = asyncHandler(async (req, res) => {
   res.status(201).json({ success: true, data: announcement });
 });
 
-//  Get announcements (most recent first)
-//  GET /api/announcements?limit=
-//  Private
+// @desc    Get announcements (most recent first)
+// @route   GET /api/announcements?limit=
+// @access  Private
 const getAnnouncements = asyncHandler(async (req, res) => {
   const { limit } = req.query;
   let query = Announcement.find().sort({ date: -1 }).populate("createdBy", "name");
@@ -26,9 +26,9 @@ const getAnnouncements = asyncHandler(async (req, res) => {
   res.json({ success: true, count: announcements.length, data: announcements });
 });
 
-// Update an announcement
-// PUT /api/announcements/:id
-// Private (admin, hr_manager)
+// @desc    Update an announcement
+// @route   PUT /api/announcements/:id
+// @access  Private (admin, hr_manager)
 const updateAnnouncement = asyncHandler(async (req, res) => {
   const announcement = await Announcement.findByIdAndUpdate(
     req.params.id,
@@ -41,9 +41,9 @@ const updateAnnouncement = asyncHandler(async (req, res) => {
   res.json({ success: true, data: announcement });
 });
 
-//  Delete an announcement
-//  DELETE /api/announcements/:id
-//  Private (admin, hr_manager)
+// @desc    Delete an announcement
+// @route   DELETE /api/announcements/:id
+// @access  Private (admin, hr_manager)
 const deleteAnnouncement = asyncHandler(async (req, res) => {
   const announcement = await Announcement.findByIdAndDelete(req.params.id);
   if (!announcement) {

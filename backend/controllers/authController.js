@@ -2,10 +2,10 @@ const User = require("../models/User");
 const generateToken = require("../utils/generateToken");
 const asyncHandler = require("../utils/asyncHandler");
 
-//  Register a new user (admin/hr_manager typically created this way,
-//  employees are usually created via the Employee module + invite)
-//  POST /api/auth/register
-//  Public (in production, restrict this to admin-only after first setup)
+// @desc    Register a new user (admin/hr_manager typically created this way,
+//          employees are usually created via the Employee module + invite)
+// @route   POST /api/auth/register
+// @access  Public (in production, restrict this to admin-only after first setup)
 const register = asyncHandler(async (req, res) => {
   const { name, email, password, role, employee } = req.body;
 
@@ -25,9 +25,9 @@ const register = asyncHandler(async (req, res) => {
   });
 });
 
-//  Login and receive a JWT
-//  POST /api/auth/login
-//  Public
+// @desc    Login and receive a JWT
+// @route   POST /api/auth/login
+// @access  Public
 const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
@@ -49,18 +49,18 @@ const login = asyncHandler(async (req, res) => {
   });
 });
 
-// Get the currently authenticated user's profile
-// GET /api/auth/me
-// Private
+// @desc    Get the currently authenticated user's profile
+// @route   GET /api/auth/me
+// @access  Private
 const getMe = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id).populate("employee");
   res.json({ success: true, data: user });
 });
 
-//  Logout (stateless JWT - client discards the token; endpoint kept
-//  for symmetry and future token-blacklisting support)
-//  POST /api/auth/logout
-//  Private
+// @desc    Logout (stateless JWT - client discards the token; endpoint kept
+//          for symmetry and future token-blacklisting support)
+// @route   POST /api/auth/logout
+// @access  Private
 const logout = asyncHandler(async (req, res) => {
   res.json({ success: true, message: "Logged out successfully" });
 });

@@ -2,6 +2,7 @@ import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
+import Calendar from "./pages/Calendar";
 import Employees from "./pages/Employees";
 import Departments from "./pages/Departments";
 import Attendance from "./pages/Attendance";
@@ -20,6 +21,7 @@ export default function App() {
       <Route element={<ProtectedRoute />}>
         <Route element={<DashboardLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/calendar" element={<Calendar />} />
           <Route path="/attendance" element={<Attendance />} />
           <Route path="/leaves" element={<Leaves />} />
           <Route path="/announcements" element={<Announcements />} />
