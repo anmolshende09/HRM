@@ -2,11 +2,6 @@ const mongoose = require("mongoose");
 
 const leaveRequestSchema = new mongoose.Schema(
   {
-    company: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Company",
-      required: true,
-    },
     employee: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Employee",

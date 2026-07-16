@@ -2,18 +2,10 @@ const mongoose = require("mongoose");
 
 const departmentSchema = new mongoose.Schema(
   {
-    company: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Company",
-      required: true,
-    },
-    branch: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Branch",
-    },
     name: {
       type: String,
       required: [true, "Department name is required"],
+      unique: true,
       trim: true,
     },
     description: {

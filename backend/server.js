@@ -15,17 +15,6 @@ const leaveRoutes = require("./routes/leaveRoutes");
 const announcementRoutes = require("./routes/announcementRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
 
-// New route modules
-const branchRoutes = require("./routes/branchRoutes");
-const designationRoutes = require("./routes/designationRoutes");
-const holidayRoutes = require("./routes/holidayRoutes");
-const timesheetRoutes = require("./routes/timesheetRoutes");
-const shiftRoutes = require("./routes/shiftRoutes");
-const policyRoutes = require("./routes/policyRoutes");
-const regularizationRoutes = require("./routes/regularizationRoutes");
-const recruitmentRoutes = require("./routes/recruitmentRoutes");
-const miscRoutes = require("./routes/miscRoutes");
-
 connectDB();
 
 const app = express();
@@ -54,17 +43,6 @@ app.use("/api/attendance", attendanceRoutes);
 app.use("/api/leaves", leaveRoutes);
 app.use("/api/announcements", announcementRoutes);
 app.use("/api/dashboard", dashboardRoutes);
-
-// New Feature routes
-app.use("/api/branches", branchRoutes);
-app.use("/api/designations", designationRoutes);
-app.use("/api/holidays", holidayRoutes);
-app.use("/api/timesheets", timesheetRoutes);
-app.use("/api/shifts", shiftRoutes);
-app.use("/api/policies", policyRoutes);
-app.use("/api/regularizations", regularizationRoutes);
-app.use("/api/recruitment", recruitmentRoutes);
-app.use("/api/misc", miscRoutes);
 
 // 404 + error handling (must be last)
 app.use(notFound);
