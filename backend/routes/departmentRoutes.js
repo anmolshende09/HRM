@@ -8,14 +8,9 @@ const {
   deleteDepartment,
 } = require("../controllers/departmentController");
 const { protect, authorize } = require("../middleware/auth");
-const { body } = require("express-validator");
-const { validate } = require("../validators/authValidator");
+const { departmentRules, validate } = require("../validators/departmentValidator");
 
 router.use(protect);
-
-const departmentRules = [
-  body("name").trim().notEmpty().withMessage("Department name is required"),
-];
 
 router
   .route("/")
@@ -25,7 +20,7 @@ router
 router
   .route("/:id")
   .get(getDepartment)
-  .put(authorize("admin", "hr_manager"), updateDepartment)
+  .put(authorize("admin", "hr_manager"), departmentRules, validate, updateDepartment)
   .delete(authorize("admin"), deleteDepartment);
 
 module.exports = router;

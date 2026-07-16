@@ -15,6 +15,7 @@ const leaveRoutes = require("./routes/leaveRoutes");
 const announcementRoutes = require("./routes/announcementRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
 const calendarRoutes = require("./routes/calendarRoutes");
+const branchRoutes = require("./routes/branchRoutes");
 
 connectDB();
 
@@ -45,6 +46,7 @@ app.use("/api/leaves", leaveRoutes);
 app.use("/api/announcements", announcementRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/calendar", calendarRoutes);
+app.use("/api/branches", branchRoutes);
 
 // 404 + error handling (must be last)
 app.use(notFound);

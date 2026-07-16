@@ -1,10 +1,10 @@
 const mongoose = require("mongoose");
 
-const departmentSchema = new mongoose.Schema(
+const awardTypeSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: [true, "Department name is required"],
+      required: [true, "Award type name is required"],
       unique: true,
       trim: true,
     },
@@ -12,11 +12,6 @@ const departmentSchema = new mongoose.Schema(
       type: String,
       trim: true,
       default: "",
-    },
-    branch: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Branch",
-      default: null,
     },
     status: {
       type: String,
@@ -27,6 +22,6 @@ const departmentSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-departmentSchema.index({ name: "text", description: "text" });
+awardTypeSchema.index({ name: "text" });
 
-module.exports = mongoose.model("Department", departmentSchema);
+module.exports = mongoose.model("AwardType", awardTypeSchema);

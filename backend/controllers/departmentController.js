@@ -6,16 +6,38 @@ const asyncHandler = require("../utils/asyncHandler");
 // @route   POST /api/departments
 // @access  Private (admin, hr_manager)
 const createDepartment = asyncHandler(async (req, res) => {
-  const { name, description } = req.body;
-  const department = await Department.create({ name, description });
-  res.status(201).json({ success: true, data: department });
+  const { name, description, branch, status } = req.body;
+  const department = await Department.create({
+    name,
+    description,
+    branch: branch || null,
+    status,
+  });
+  const populated = await department.populate("branch", "name");
+  res.status(201).json({ success: true, data: populated });
 });
 
-// @desc    Get all departments, with live employee counts
-// @route   GET /api/departments
+// @desc    Get departments with search + filter (branch/status) + pagination,
+//          plus live employee counts. Defaults to a large page size so
+//          existing callers that don't pass page/limit still get everything.
+// @route   GET /api/departments?search=&branch=&status=&page=&limit=
 // @access  Private
 const getDepartments = asyncHandler(async (req, res) => {
-  const departments = await Department.find().sort({ name: 1 }).lean();
+  const { search, branch, status, page = 1, limit = 50 } = req.query;
+
+  const query = {};
+  if (search) query.$text = { $search: search };
+  if (branch) query.branch = branch;
+  if (status) query.status = status;
+
+  const pageNum = Math.max(parseInt(page, 10) || 1, 1);
+  const limitNum = Math.max(parseInt(limit, 10) || 50, 1);
+  const skip = (pageNum - 1) * limitNum;
+
+  const [departments, total] = await Promise.all([
+    Department.find(query).populate("branch", "name").sort({ name: 1 }).skip(skip).limit(limitNum).lean(),
+    Department.countDocuments(query),
+  ]);
 
   const counts = await Employee.aggregate([
     { $group: { _id: "$department", count: { $sum: 1 } } },
@@ -30,14 +52,18 @@ const getDepartments = asyncHandler(async (req, res) => {
     employeeCount: countMap[d._id.toString()] || 0,
   }));
 
-  res.json({ success: true, count: withCounts.length, data: withCounts });
+  res.json({
+    success: true,
+    data: withCounts,
+    pagination: { total, page: pageNum, limit: limitNum, totalPages: Math.ceil(total / limitNum) },
+  });
 });
 
 // @desc    Get a single department
 // @route   GET /api/departments/:id
 // @access  Private
 const getDepartment = asyncHandler(async (req, res) => {
-  const department = await Department.findById(req.params.id);
+  const department = await Department.findById(req.params.id).populate("branch", "name");
   if (!department) {
     return res.status(404).json({ success: false, message: "Department not found" });
   }
@@ -49,11 +75,12 @@ const getDepartment = asyncHandler(async (req, res) => {
 // @route   PUT /api/departments/:id
 // @access  Private (admin, hr_manager)
 const updateDepartment = asyncHandler(async (req, res) => {
+  const { name, description, branch, status } = req.body;
   const department = await Department.findByIdAndUpdate(
     req.params.id,
-    { name: req.body.name, description: req.body.description },
+    { name, description, branch: branch || null, status },
     { new: true, runValidators: true }
-  );
+  ).populate("branch", "name");
   if (!department) {
     return res.status(404).json({ success: false, message: "Department not found" });
   }

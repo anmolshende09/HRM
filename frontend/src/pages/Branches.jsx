@@ -1,32 +1,30 @@
 import React, { useEffect, useState } from "react";
-import { Plus, Pencil, Trash2, Building2 } from "lucide-react";
-import { departmentService } from "../services/departmentService";
+import { Plus, Pencil, Trash2, MapPin } from "lucide-react";
 import { branchService } from "../services/branchService";
 import { useToast } from "../context/ToastContext";
 import Button from "../components/common/Button";
 import Table from "../components/common/Table";
 import StatusBadge from "../components/common/StatusBadge";
 import SearchBar from "../components/common/SearchBar";
+import Pagination from "../components/common/Pagination";
 import Modal from "../components/common/Modal";
 import ConfirmDialog from "../components/common/ConfirmDialog";
-import { TextField, TextAreaField, SelectField } from "../components/common/FormField";
+import { TextField, SelectField } from "../components/common/FormField";
 import { useDebounce } from "../hooks/useDebounce";
 
-const emptyForm = { name: "", description: "", branch: "", status: "active" };
+const emptyForm = { name: "", address: "", phone: "", email: "", status: "active" };
 const STATUS_OPTIONS = [
   { value: "active", label: "Active" },
   { value: "inactive", label: "Inactive" },
 ];
 
-export default function Departments() {
+export default function Branches() {
   const toast = useToast();
-  const [departments, setDepartments] = useState([]);
   const [branches, setBranches] = useState([]);
+  const [pagination, setPagination] = useState({ page: 1, totalPages: 1 });
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search);
-  const [branchFilter, setBranchFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -36,25 +34,19 @@ export default function Departments() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
-  useEffect(() => {
-    branchService.all().then(({ data }) => setBranches(data.data)).catch(() => {});
-  }, []);
-
-  const load = () => {
+  const load = (page = 1) => {
     setLoading(true);
-    departmentService
-      .list({
-        search: debouncedSearch || undefined,
-        branch: branchFilter || undefined,
-        status: statusFilter || undefined,
-        limit: 50,
+    branchService
+      .list({ search: debouncedSearch || undefined, page, limit: 10 })
+      .then(({ data }) => {
+        setBranches(data.data);
+        setPagination({ page: data.pagination.page, totalPages: data.pagination.totalPages });
       })
-      .then(({ data }) => setDepartments(data.data))
-      .catch(() => toast.error("Couldn't load departments"))
+      .catch(() => toast.error("Couldn't load branches"))
       .finally(() => setLoading(false));
   };
 
-  useEffect(load, [debouncedSearch, branchFilter, statusFilter]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => load(1), [debouncedSearch]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const openAdd = () => {
     setEditing(null);
@@ -63,13 +55,14 @@ export default function Departments() {
     setModalOpen(true);
   };
 
-  const openEdit = (dept) => {
-    setEditing(dept);
+  const openEdit = (branch) => {
+    setEditing(branch);
     setForm({
-      name: dept.name,
-      description: dept.description || "",
-      branch: dept.branch?._id || dept.branch || "",
-      status: dept.status || "active",
+      name: branch.name,
+      address: branch.address || "",
+      phone: branch.phone || "",
+      email: branch.email || "",
+      status: branch.status || "active",
     });
     setErrors({});
     setModalOpen(true);
@@ -77,21 +70,23 @@ export default function Departments() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.name) {
-      setErrors({ name: "Department name is required" });
-      return;
-    }
+    const next = {};
+    if (!form.name) next.name = "Branch name is required";
+    if (form.email && !/\S+@\S+\.\S+/.test(form.email)) next.email = "Enter a valid email";
+    setErrors(next);
+    if (Object.keys(next).length) return;
+
     setSubmitting(true);
     try {
       if (editing) {
-        await departmentService.update(editing._id, form);
-        toast.success("Department updated");
+        await branchService.update(editing._id, form);
+        toast.success("Branch updated");
       } else {
-        await departmentService.create(form);
-        toast.success("Department created");
+        await branchService.create(form);
+        toast.success("Branch created");
       }
       setModalOpen(false);
-      load();
+      load(pagination.page);
     } catch (err) {
       toast.error(err.response?.data?.message || "Something went wrong");
     } finally {
@@ -102,12 +97,12 @@ export default function Departments() {
   const handleDelete = async () => {
     setDeleting(true);
     try {
-      await departmentService.remove(deleteTarget._id);
-      toast.success("Department deleted");
+      await branchService.remove(deleteTarget._id);
+      toast.success("Branch deleted");
       setDeleteTarget(null);
-      load();
+      load(pagination.page);
     } catch (err) {
-      toast.error(err.response?.data?.message || "Couldn't delete department");
+      toast.error(err.response?.data?.message || "Couldn't delete branch");
     } finally {
       setDeleting(false);
     }
@@ -116,19 +111,18 @@ export default function Departments() {
   const columns = [
     {
       key: "name",
-      header: "Department",
+      header: "Branch",
       render: (row) => (
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
-            <Building2 size={16} />
+            <MapPin size={16} />
           </div>
           <span className="text-caption-strong">{row.name}</span>
         </div>
       ),
     },
-    { key: "branch", header: "Branch", render: (row) => row.branch?.name || "—" },
-    { key: "description", header: "Description", render: (row) => row.description || "—" },
-    { key: "employeeCount", header: "Employees" },
+    { key: "address", header: "Address", render: (row) => row.address || "—" },
+    { key: "contact", header: "Contact", render: (row) => row.phone || row.email || "—" },
     { key: "status", header: "Status", render: (row) => <StatusBadge status={row.status} /> },
     {
       key: "actions",
@@ -158,51 +152,36 @@ export default function Departments() {
     <div className="space-y-lg">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-display-md">Departments</h1>
-          <p className="text-caption text-ink-muted48 mt-1">Organize your company's structure.</p>
+          <h1 className="text-display-md">Branches</h1>
+          <p className="text-caption text-ink-muted48 mt-1">Manage your company's office locations.</p>
         </div>
         <Button icon={Plus} onClick={openAdd}>
-          Add Department
+          Add Branch
         </Button>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3">
-        <SearchBar value={search} onChange={setSearch} placeholder="Search departments…" className="max-w-sm" />
-        <SelectField
-          value={branchFilter}
-          onChange={(e) => setBranchFilter(e.target.value)}
-          options={[{ value: "", label: "All Branches" }, ...branches.map((b) => ({ value: b._id, label: b.name }))]}
-          className="w-full sm:w-48"
-        />
-        <SelectField
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          options={[{ value: "", label: "All Statuses" }, ...STATUS_OPTIONS]}
-          className="w-full sm:w-40"
-        />
-      </div>
+      <SearchBar value={search} onChange={setSearch} placeholder="Search branches…" className="max-w-sm" />
 
       <div className="bg-canvas border border-hairline rounded-lg p-lg">
-        <Table columns={columns} data={departments} loading={loading} emptyTitle="No departments found" emptyDescription="Try different filters, or create your first department." />
+        <Table columns={columns} data={branches} loading={loading} emptyTitle="No branches yet" emptyDescription="Add your first branch so departments can be assigned to it." />
+        <Pagination page={pagination.page} totalPages={pagination.totalPages} onChange={load} />
       </div>
 
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? "Edit Department" : "Add Department"}>
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? "Edit Branch" : "Add Branch"}>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <TextField label="Department Name" required value={form.name} error={errors.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-          <SelectField
-            label="Branch (optional)"
-            value={form.branch}
-            onChange={(e) => setForm({ ...form, branch: e.target.value })}
-            options={[{ value: "", label: "No branch" }, ...branches.map((b) => ({ value: b._id, label: b.name }))]}
-          />
-          <TextAreaField label="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+          <TextField label="Branch Name" required value={form.name} error={errors.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+          <TextField label="Address" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <TextField label="Phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+            <TextField label="Email" type="email" value={form.email} error={errors.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+          </div>
           <SelectField label="Status" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} options={STATUS_OPTIONS} />
           <div className="flex justify-end gap-3 pt-2">
             <Button type="button" variant="ghost" onClick={() => setModalOpen(false)} disabled={submitting}>
               Cancel
             </Button>
             <Button type="submit" loading={submitting}>
-              {editing ? "Save changes" : "Create department"}
+              {editing ? "Save changes" : "Create branch"}
             </Button>
           </div>
         </form>
@@ -213,8 +192,8 @@ export default function Departments() {
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleDelete}
         loading={deleting}
-        title="Delete department?"
-        description={`This will permanently remove "${deleteTarget?.name}". Departments with assigned employees can't be deleted.`}
+        title="Delete branch?"
+        description={`This will permanently remove "${deleteTarget?.name}". Branches with assigned departments can't be deleted.`}
         confirmLabel="Delete"
       />
     </div>

@@ -4,6 +4,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Calendar from "./pages/Calendar";
 import OrgChart from "./pages/OrgChart";
+import Branches from "./pages/Branches";
 import Employees from "./pages/Employees";
 import Departments from "./pages/Departments";
 import Attendance from "./pages/Attendance";
@@ -31,6 +32,7 @@ export default function App() {
           <Route element={<ProtectedRoute roles={MANAGER_ROLES} />}>
             <Route path="/employees" element={<Employees />} />
             <Route path="/departments" element={<Departments />} />
+            <Route path="/branches" element={<Branches />} />
           </Route>
         </Route>
       </Route>
