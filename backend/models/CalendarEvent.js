@@ -32,6 +32,24 @@ const calendarEventSchema = new mongoose.Schema(
       trim: true,
       default: "",
     },
+    // Only meaningful when category === "holiday". Optional at the schema
+    // level (not required) so the Calendar page's quick "Add Event" modal can
+    // still create simple holidays without going through the full Holidays
+    // management page — categorization can be added later via that page.
+    holidayCategory: {
+      type: String,
+      enum: ["national", "company_specific", "religious", null],
+      default: null,
+    },
+    // Which branches this holiday applies to. Empty array = applies
+    // company-wide (all branches) — this is the default and matches how
+    // holidays created via the simple Calendar modal behave.
+    branches: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Branch",
+      },
+    ],
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

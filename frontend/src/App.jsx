@@ -5,6 +5,7 @@ import Dashboard from "./pages/Dashboard";
 import Calendar from "./pages/Calendar";
 import OrgChart from "./pages/OrgChart";
 import Branches from "./pages/Branches";
+import Holidays from "./pages/Holidays";
 import Employees from "./pages/Employees";
 import Departments from "./pages/Departments";
 import Attendance from "./pages/Attendance";
@@ -33,6 +34,7 @@ export default function App() {
             <Route path="/employees" element={<Employees />} />
             <Route path="/departments" element={<Departments />} />
             <Route path="/branches" element={<Branches />} />
+            <Route path="/holidays" element={<Holidays />} />
           </Route>
         </Route>
       </Route>

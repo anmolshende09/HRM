@@ -28,6 +28,7 @@ const getCalendarEvents = asyncHandler(async (req, res) => {
     _id: e._id,
     title: e.title,
     category: e.category, // 'holiday' | 'meeting'
+    holidayCategory: e.holidayCategory || null,
     startDate: e.startDate,
     endDate: e.endDate,
     description: e.description,

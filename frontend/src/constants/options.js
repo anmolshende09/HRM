@@ -30,6 +30,12 @@ export const CALENDAR_CATEGORIES = [
   { value: "meeting", label: "Meeting" },
 ];
 
+export const HOLIDAY_CATEGORIES = [
+  { value: "national", label: "National" },
+  { value: "company_specific", label: "Company Specific" },
+  { value: "religious", label: "Religious" },
+];
+
 // Meetings = Blue, Holidays = Green, Leaves = Orange — per the Calendar spec's legend
 export const CALENDAR_CATEGORY_STYLES = {
   meeting: { dot: "bg-primary", bar: "bg-primary/15 text-primary", label: "Meeting" },
