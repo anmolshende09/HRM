@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 const connectDB = require("../config/db");
 const User = require("../models/User");
 const Department = require("../models/Department");
+const Designation = require("../models/Designation");
 const Employee = require("../models/Employee");
 const Attendance = require("../models/Attendance");
 const LeaveRequest = require("../models/LeaveRequest");
@@ -66,6 +67,35 @@ const daysAgo = (n) => {
   return d;
 };
 
+// Creates real Designation records from the DESIGNATIONS_BY_DEPT pool, one
+// per department, so seeded employees can reference actual master data
+// instead of free text. Idempotent via the model's own unique
+// (name, department) compound index — findOne-or-create per combination.
+// Returns a map of department name -> array of created/found Designation docs.
+const seedDesignations = async () => {
+  const byDept = {};
+
+  for (const [deptName, titles] of Object.entries(DESIGNATIONS_BY_DEPT)) {
+    const department = await Department.findOne({ name: deptName });
+    if (!department) {
+      console.warn(`Department "${deptName}" not found, skipping its designations`);
+      continue;
+    }
+
+    byDept[deptName] = [];
+    for (const title of titles) {
+      let designation = await Designation.findOne({ name: title, department: department._id });
+      if (!designation) {
+        designation = await Designation.create({ name: title, department: department._id, status: "active" });
+        console.log(`Created designation: ${title} (${deptName})`);
+      }
+      byDept[deptName].push(designation);
+    }
+  }
+
+  return byDept;
+};
+
 // --- Seed steps -----------------------------------------------------------
 
 const seedAdminAndDepartments = async () => {
@@ -93,7 +123,7 @@ const seedAdminAndDepartments = async () => {
 
 // Creates the planned headcount per department (idempotent: skips employeeIds
 // that already exist, so re-running only tops up what's missing).
-const seedEmployees = async () => {
+const seedEmployees = async (designationsByDept) => {
   const created = { Engineering: [], Finance: [], "Human Resources": [], Marketing: [], Sales: [] };
 
   for (const [deptName, plan] of Object.entries(DEPARTMENT_PLAN)) {
@@ -105,22 +135,24 @@ const seedEmployees = async () => {
 
     for (let i = 1; i <= plan.count; i += 1) {
       const employeeId = `${plan.code}-${String(i).padStart(3, "0")}`;
-      let employee = await Employee.findOne({ employeeId });
+      let employee = await Employee.findOne({ employeeId }).populate("designation", "name");
 
       if (!employee) {
         const name = nextName();
         const emailSafeName = name.toLowerCase().replace(/\s+/g, ".");
+        const designation = randomFrom(designationsByDept[deptName]);
         employee = await Employee.create({
           employeeId,
           name,
           email: `${emailSafeName}.${plan.code.toLowerCase()}${i}@hrms-demo.local`,
           phone: `9${Math.floor(100000000 + Math.random() * 899999999)}`,
           department: department._id,
-          designation: randomFrom(DESIGNATIONS_BY_DEPT[deptName]),
+          designation: designation._id,
           joiningDate: randomJoiningDate(),
           salary: Math.floor(Math.random() * 40000 + 40000) * 12, // annual, in whatever currency unit
           status: "active",
         });
+        await employee.populate("designation", "name");
         console.log(`Created employee: ${employee.name} (${employeeId}, ${deptName})`);
       }
 

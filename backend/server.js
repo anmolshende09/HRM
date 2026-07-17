@@ -17,6 +17,7 @@ const dashboardRoutes = require("./routes/dashboardRoutes");
 const calendarRoutes = require("./routes/calendarRoutes");
 const branchRoutes = require("./routes/branchRoutes");
 const holidayRoutes = require("./routes/holidayRoutes");
+const designationRoutes = require("./routes/designationRoutes");
 
 connectDB();
 
@@ -49,6 +50,7 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/calendar", calendarRoutes);
 app.use("/api/branches", branchRoutes);
 app.use("/api/holidays", holidayRoutes);
+app.use("/api/designations", designationRoutes);
 
 // 404 + error handling (must be last)
 app.use(notFound);

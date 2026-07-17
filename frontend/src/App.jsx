@@ -6,6 +6,7 @@ import Calendar from "./pages/Calendar";
 import OrgChart from "./pages/OrgChart";
 import Branches from "./pages/Branches";
 import Holidays from "./pages/Holidays";
+import Designations from "./pages/Designations";
 import Employees from "./pages/Employees";
 import Departments from "./pages/Departments";
 import Attendance from "./pages/Attendance";
@@ -35,6 +36,7 @@ export default function App() {
             <Route path="/departments" element={<Departments />} />
             <Route path="/branches" element={<Branches />} />
             <Route path="/holidays" element={<Holidays />} />
+            <Route path="/designations" element={<Designations />} />
           </Route>
         </Route>
       </Route>

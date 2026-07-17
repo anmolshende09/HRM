@@ -6,7 +6,7 @@ const employeeRules = [
   body("name").trim().notEmpty().withMessage("Name is required"),
   body("email").isEmail().withMessage("A valid email is required"),
   body("department").isMongoId().withMessage("A valid department is required"),
-  body("designation").trim().notEmpty().withMessage("Designation is required"),
+  body("designation").isMongoId().withMessage("A valid designation is required"),
   body("joiningDate").isISO8601().toDate().withMessage("A valid joining date is required"),
   body("phone").optional().trim(),
   body("salary").optional().isNumeric().withMessage("Salary must be a number"),

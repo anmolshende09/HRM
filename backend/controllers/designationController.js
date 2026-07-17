@@ -1,4 +1,5 @@
 const Designation = require("../models/Designation");
+const Employee = require("../models/Employee");
 const asyncHandler = require("../utils/asyncHandler");
 
 // @desc    Create a designation, assigned to a department
@@ -44,6 +45,19 @@ const getDesignations = asyncHandler(async (req, res) => {
   });
 });
 
+// @desc    Lightweight list for dropdowns (e.g. Employee form's "Designation"
+//          select, optionally scoped to the currently-selected department).
+// @route   GET /api/designations/all?department=
+// @access  Private
+const getAllDesignations = asyncHandler(async (req, res) => {
+  const { department } = req.query;
+  const query = { status: "active" };
+  if (department) query.department = department;
+
+  const designations = await Designation.find(query).select("name department").sort({ name: 1 });
+  res.json({ success: true, data: designations });
+});
+
 // @desc    Get a single designation
 // @route   GET /api/designations/:id
 // @access  Private
@@ -79,6 +93,14 @@ const updateDesignation = asyncHandler(async (req, res) => {
 // @route   DELETE /api/designations/:id
 // @access  Private (admin)
 const deleteDesignation = asyncHandler(async (req, res) => {
+  const inUse = await Employee.countDocuments({ designation: req.params.id });
+  if (inUse > 0) {
+    return res.status(400).json({
+      success: false,
+      message: `Cannot delete designation: ${inUse} employee(s) are still assigned to it`,
+    });
+  }
+
   const designation = await Designation.findByIdAndDelete(req.params.id);
   if (!designation) {
     return res.status(404).json({ success: false, message: "Designation not found" });
@@ -86,4 +108,11 @@ const deleteDesignation = asyncHandler(async (req, res) => {
   res.json({ success: true, message: "Designation deleted" });
 });
 
-module.exports = { createDesignation, getDesignations, getDesignation, updateDesignation, deleteDesignation };
+module.exports = {
+  createDesignation,
+  getDesignations,
+  getAllDesignations,
+  getDesignation,
+  updateDesignation,
+  deleteDesignation,
+};

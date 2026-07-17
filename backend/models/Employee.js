@@ -30,9 +30,9 @@ const employeeSchema = new mongoose.Schema(
       required: [true, "Department is required"],
     },
     designation: {
-      type: String,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Designation",
       required: [true, "Designation is required"],
-      trim: true,
     },
     joiningDate: {
       type: Date,

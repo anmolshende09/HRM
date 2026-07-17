@@ -20,7 +20,10 @@ const createEmployee = asyncHandler(async (req, res) => {
     payload.profilePicture = `/uploads/employees/${req.file.filename}`;
   }
   const employee = await Employee.create(payload);
-  const populated = await employee.populate("department", "name");
+  const populated = await employee.populate([
+    { path: "department", select: "name" },
+    { path: "designation", select: "name" },
+  ]);
   res.status(201).json({ success: true, data: populated });
 });
 
@@ -44,6 +47,7 @@ const getEmployees = asyncHandler(async (req, res) => {
   const [employees, total] = await Promise.all([
     Employee.find(query)
       .populate("department", "name")
+      .populate("designation", "name")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limitNum),
@@ -72,6 +76,7 @@ const getOrgChart = asyncHandler(async (req, res) => {
   const employees = await Employee.find()
     .select("name designation status profilePicture department manager")
     .populate("department", "name")
+    .populate("designation", "name")
     .lean();
 
   res.json({
@@ -80,7 +85,7 @@ const getOrgChart = asyncHandler(async (req, res) => {
     data: employees.map((e) => ({
       _id: e._id,
       name: e.name,
-      designation: e.designation,
+      designation: e.designation?.name || null,
       department: e.department?.name || null,
       status: e.status,
       profilePicture: e.profilePicture,
@@ -93,7 +98,9 @@ const getOrgChart = asyncHandler(async (req, res) => {
 // @route   GET /api/employees/:id
 // @access  Private
 const getEmployee = asyncHandler(async (req, res) => {
-  const employee = await Employee.findById(req.params.id).populate("department", "name");
+  const employee = await Employee.findById(req.params.id)
+    .populate("department", "name")
+    .populate("designation", "name");
   if (!employee) {
     return res.status(404).json({ success: false, message: "Employee not found" });
   }
@@ -116,7 +123,9 @@ const updateEmployee = asyncHandler(async (req, res) => {
   const employee = await Employee.findByIdAndUpdate(req.params.id, payload, {
     new: true,
     runValidators: true,
-  }).populate("department", "name");
+  })
+    .populate("department", "name")
+    .populate("designation", "name");
 
   if (!employee) {
     return res.status(404).json({ success: false, message: "Employee not found" });

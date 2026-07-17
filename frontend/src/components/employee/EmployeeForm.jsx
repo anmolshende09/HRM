@@ -3,6 +3,7 @@ import { TextField, SelectField } from "../common/FormField";
 import Button from "../common/Button";
 import { EMPLOYEE_STATUS } from "../../constants/options";
 import { toInputDate } from "../../utils/format";
+import { designationService } from "../../services/designationService";
 
 const STATUS_OPTIONS = Object.values(EMPLOYEE_STATUS).map((s) => ({
   value: s,
@@ -26,6 +27,8 @@ export default function EmployeeForm({ initialValues, departments, employees = [
   const [form, setForm] = useState(emptyForm);
   const [errors, setErrors] = useState({});
   const [photo, setPhoto] = useState(null);
+  const [designationOptions, setDesignationOptions] = useState([]);
+  const [loadingDesignations, setLoadingDesignations] = useState(false);
 
   useEffect(() => {
     if (initialValues) {
@@ -35,7 +38,7 @@ export default function EmployeeForm({ initialValues, departments, employees = [
         email: initialValues.email || "",
         phone: initialValues.phone || "",
         department: initialValues.department?._id || initialValues.department || "",
-        designation: initialValues.designation || "",
+        designation: initialValues.designation?._id || initialValues.designation || "",
         joiningDate: toInputDate(initialValues.joiningDate),
         salary: initialValues.salary ?? "",
         status: initialValues.status || "active",
@@ -45,6 +48,29 @@ export default function EmployeeForm({ initialValues, departments, employees = [
       setForm(emptyForm);
     }
   }, [initialValues]);
+
+  // Designation is scoped to the selected department — refetch whenever it
+  // changes, and if the currently-selected designation doesn't belong to the
+  // new department, clear it rather than silently submit a mismatched pair.
+  useEffect(() => {
+    if (!form.department) {
+      setDesignationOptions([]);
+      return;
+    }
+    setLoadingDesignations(true);
+    designationService
+      .all(form.department)
+      .then(({ data }) => {
+        setDesignationOptions(data.data);
+        setForm((prev) => {
+          const stillValid = data.data.some((d) => d._id === prev.designation);
+          return stillValid ? prev : { ...prev, designation: "" };
+        });
+      })
+      .catch(() => setDesignationOptions([]))
+      .finally(() => setLoadingDesignations(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.department]);
 
   const set = (key) => (e) => setForm({ ...form, [key]: e.target.value });
 
@@ -78,14 +104,12 @@ export default function EmployeeForm({ initialValues, departments, employees = [
     onSubmit(formData);
   };
 
-  // Can't report to yourself, and can't report to someone who (directly)
-  // reports to you — full cycle prevention is a backend concern for later;
-  // this just stops the most obvious mistake at the form level.
+  // Can't report to yourself. Full cycle prevention is a backend concern.
   const managerOptions = [
     { value: "", label: "No manager" },
     ...employees
       .filter((e) => e._id !== initialValues?._id)
-      .map((e) => ({ value: e._id, label: `${e.name} (${e.designation})` })),
+      .map((e) => ({ value: e._id, label: `${e.name} (${e.designation || "—"})` })),
   ];
 
   return (
@@ -104,7 +128,16 @@ export default function EmployeeForm({ initialValues, departments, employees = [
           onChange={set("department")}
           options={departments.map((d) => ({ value: d._id, label: d.name }))}
         />
-        <TextField label="Designation" required value={form.designation} error={errors.designation} onChange={set("designation")} />
+        <SelectField
+          label="Designation"
+          required
+          placeholder={!form.department ? "Select department first" : loadingDesignations ? "Loading…" : "Select designation"}
+          value={form.designation}
+          error={errors.designation}
+          onChange={set("designation")}
+          disabled={!form.department || loadingDesignations}
+          options={designationOptions.map((d) => ({ value: d._id, label: d.name }))}
+        />
         <TextField label="Joining Date" type="date" required value={form.joiningDate} error={errors.joiningDate} onChange={set("joiningDate")} />
         <TextField label="Salary (optional)" type="number" value={form.salary} onChange={set("salary")} />
         <SelectField label="Status" value={form.status} onChange={set("status")} options={STATUS_OPTIONS} />

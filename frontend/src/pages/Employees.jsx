@@ -131,7 +131,7 @@ export default function Employees() {
     },
     { key: "employeeId", header: "ID" },
     { key: "department", header: "Department", render: (row) => row.department?.name || "—" },
-    { key: "designation", header: "Designation" },
+    { key: "designation", header: "Designation", render: (row) => row.designation?.name || "—" },
     { key: "joiningDate", header: "Joined", render: (row) => formatDate(row.joiningDate) },
     { key: "status", header: "Status", render: (row) => <StatusBadge status={row.status} /> },
     {
