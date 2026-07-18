@@ -247,13 +247,21 @@ const seedAnnouncements = async (createdByUserId) => {
       title: "[Demo] Welcome to the new HRMS dashboard",
       description:
         "We've rolled out a new Human Resource Management System to make employee, attendance, and leave management simpler for everyone. Explore the dashboard and let us know what you think!",
-      date: daysAgo(1),
+      category: "general",
+      priority: "medium",
+      featured: true,
+      audienceType: "company_wide",
+      startDate: daysAgo(1),
     },
     {
       title: "[Demo] Quarterly town hall next Friday",
       description:
         "Join us for the quarterly all-hands town hall next Friday at 4 PM in the main conference room. We'll cover company updates, team shout-outs, and a Q&A session.",
-      date: daysAgo(0),
+      category: "event",
+      priority: "high",
+      featured: false,
+      audienceType: "company_wide",
+      startDate: daysAgo(0),
     },
   ];
 

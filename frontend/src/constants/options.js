@@ -36,6 +36,26 @@ export const HOLIDAY_CATEGORIES = [
   { value: "religious", label: "Religious" },
 ];
 
+export const ANNOUNCEMENT_CATEGORIES = [
+  { value: "general", label: "General" },
+  { value: "policy", label: "Policy" },
+  { value: "event", label: "Event" },
+  { value: "urgent", label: "Urgent" },
+  { value: "celebration", label: "Celebration" },
+];
+
+export const ANNOUNCEMENT_PRIORITIES = [
+  { value: "low", label: "Low" },
+  { value: "medium", label: "Medium" },
+  { value: "high", label: "High" },
+];
+
+export const AUDIENCE_TYPES = [
+  { value: "company_wide", label: "Company-wide" },
+  { value: "branch", label: "Specific Branch(es)" },
+  { value: "department", label: "Specific Department(s)" },
+];
+
 // Meetings = Blue, Holidays = Green, Leaves = Orange — per the Calendar spec's legend
 export const CALENDAR_CATEGORY_STYLES = {
   meeting: { dot: "bg-primary", bar: "bg-primary/15 text-primary", label: "Meeting" },

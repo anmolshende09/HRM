@@ -4,6 +4,7 @@ const Attendance = require("../models/Attendance");
 const LeaveRequest = require("../models/LeaveRequest");
 const Announcement = require("../models/Announcement");
 const asyncHandler = require("../utils/asyncHandler");
+const { getAnnouncementAudienceQuery } = require("../utils/audienceFilter");
 
 const startOfDay = (d) => {
   const date = new Date(d);
@@ -16,6 +17,7 @@ const startOfDay = (d) => {
 // @access  Private
 const getDashboard = asyncHandler(async (req, res) => {
   const today = startOfDay(Date.now());
+  const announcementAudienceQuery = await getAnnouncementAudienceQuery(req.user);
 
   const [
     totalEmployees,
@@ -36,7 +38,7 @@ const getDashboard = asyncHandler(async (req, res) => {
     Employee.aggregate([{ $group: { _id: "$department", count: { $sum: 1 } } }]),
     Department.find().lean(),
     LeaveRequest.find().sort({ createdAt: -1 }).limit(5).populate("employee", "name"),
-    Announcement.find().sort({ date: -1 }).limit(5),
+    Announcement.find(announcementAudienceQuery).sort({ featured: -1, startDate: -1 }).limit(5),
   ]);
 
   const presentToday = todaysAttendance.filter((a) => a.status === "present").length;

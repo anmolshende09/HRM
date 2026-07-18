@@ -1,18 +1,29 @@
 import React, { useEffect, useState } from "react";
-import { Plus, Pencil, Trash2, Megaphone } from "lucide-react";
+import { Plus, Pencil, Trash2, Megaphone, Star, Paperclip } from "lucide-react";
 import { announcementService } from "../services/announcementService";
+import { branchService } from "../services/branchService";
+import { departmentService } from "../services/departmentService";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 import { MANAGER_ROLES } from "../constants/roles";
+import { ANNOUNCEMENT_CATEGORIES, ANNOUNCEMENT_PRIORITIES } from "../constants/options";
 import Button from "../components/common/Button";
 import Modal from "../components/common/Modal";
 import ConfirmDialog from "../components/common/ConfirmDialog";
 import EmptyState from "../components/common/EmptyState";
 import LoadingSpinner from "../components/common/LoadingSpinner";
-import { TextField, TextAreaField } from "../components/common/FormField";
-import { formatDate } from "../utils/format";
+import SearchBar from "../components/common/SearchBar";
+import Pagination from "../components/common/Pagination";
+import { SelectField } from "../components/common/FormField";
+import AnnouncementForm from "../components/announcement/AnnouncementForm";
+import { useDebounce } from "../hooks/useDebounce";
+import { formatDate, titleCase } from "../utils/format";
 
-const emptyForm = { title: "", description: "", date: "" };
+const PRIORITY_STYLES = {
+  low: "bg-canvas-parchment text-ink-muted48",
+  medium: "bg-primary/10 text-primary",
+  high: "bg-danger-soft text-danger",
+};
 
 export default function Announcements() {
   const { user } = useAuth();
@@ -20,59 +31,86 @@ export default function Announcements() {
   const canManage = MANAGER_ROLES.includes(user?.role);
 
   const [items, setItems] = useState([]);
+  const [branches, setBranches] = useState([]);
+  const [departments, setDepartments] = useState([]);
+  const [pagination, setPagination] = useState({ page: 1, totalPages: 1 });
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search);
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const [priorityFilter, setPriorityFilter] = useState("");
+
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState(emptyForm);
-  const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
-  const load = () => {
+  useEffect(() => {
+    if (!canManage) return;
+    branchService.all().then(({ data }) => setBranches(data.data)).catch(() => {});
+    departmentService.list().then(({ data }) => setDepartments(data.data)).catch(() => {});
+  }, [canManage]);
+
+  const load = (page = 1) => {
     setLoading(true);
     announcementService
-      .list()
-      .then(({ data }) => setItems(data.data))
+      .list({
+        search: debouncedSearch || undefined,
+        category: categoryFilter || undefined,
+        priority: priorityFilter || undefined,
+        page,
+        limit: 10,
+      })
+      .then(({ data }) => {
+        setItems(data.data);
+        setPagination({ page: data.pagination.page, totalPages: data.pagination.totalPages });
+      })
       .catch(() => toast.error("Couldn't load announcements"))
       .finally(() => setLoading(false));
   };
 
-  useEffect(load, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => load(1), [debouncedSearch, categoryFilter, priorityFilter]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const openAdd = () => {
     setEditing(null);
-    setForm(emptyForm);
-    setErrors({});
     setModalOpen(true);
   };
-
   const openEdit = (item) => {
     setEditing(item);
-    setForm({ title: item.title, description: item.description, date: item.date?.split("T")[0] || "" });
-    setErrors({});
     setModalOpen(true);
   };
+  const closeModal = () => {
+    setModalOpen(false);
+    setEditing(null);
+  };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const next = {};
-    if (!form.title) next.title = "Title is required";
-    if (!form.description) next.description = "Description is required";
-    setErrors(next);
-    if (Object.keys(next).length) return;
+  const buildFormData = (form, attachment) => {
+    const formData = new FormData();
+    Object.entries(form).forEach(([key, value]) => {
+      if (Array.isArray(value)) {
+        value.forEach((v) => formData.append(key, v));
+      } else {
+        formData.append(key, value);
+      }
+    });
+    if (attachment) formData.append("attachment", attachment);
+    return formData;
+  };
 
+  const handleSubmit = async (form, attachment) => {
     setSubmitting(true);
     try {
+      const formData = buildFormData(form, attachment);
       if (editing) {
-        await announcementService.update(editing._id, form);
+        await announcementService.update(editing._id, formData);
         toast.success("Announcement updated");
       } else {
-        await announcementService.create(form);
+        await announcementService.create(formData);
         toast.success("Announcement posted");
       }
-      setModalOpen(false);
-      load();
+      closeModal();
+      load(pagination.page);
     } catch (err) {
       toast.error(err.response?.data?.message || "Something went wrong");
     } finally {
@@ -86,12 +124,19 @@ export default function Announcements() {
       await announcementService.remove(deleteTarget._id);
       toast.success("Announcement deleted");
       setDeleteTarget(null);
-      load();
+      load(pagination.page);
     } catch (err) {
       toast.error(err.response?.data?.message || "Couldn't delete announcement");
     } finally {
       setDeleting(false);
     }
+  };
+
+  const audienceLabel = (item) => {
+    if (item.audienceType === "company_wide") return "Company-wide";
+    if (item.audienceType === "branch") return item.audienceBranches?.map((b) => b.name).join(", ") || "Branches";
+    if (item.audienceType === "department") return item.audienceDepartments?.map((d) => d.name).join(", ") || "Departments";
+    return "—";
   };
 
   return (
@@ -108,11 +153,27 @@ export default function Announcements() {
         )}
       </div>
 
+      <div className="flex flex-col sm:flex-row gap-3">
+        <SearchBar value={search} onChange={setSearch} placeholder="Search announcements…" className="max-w-sm" />
+        <SelectField
+          value={categoryFilter}
+          onChange={(e) => setCategoryFilter(e.target.value)}
+          options={[{ value: "", label: "All Categories" }, ...ANNOUNCEMENT_CATEGORIES]}
+          className="w-full sm:w-44"
+        />
+        <SelectField
+          value={priorityFilter}
+          onChange={(e) => setPriorityFilter(e.target.value)}
+          options={[{ value: "", label: "All Priorities" }, ...ANNOUNCEMENT_PRIORITIES]}
+          className="w-full sm:w-40"
+        />
+      </div>
+
       {loading ? (
         <LoadingSpinner label="Loading announcements…" />
       ) : items.length === 0 ? (
         <div className="bg-canvas border border-hairline rounded-lg">
-          <EmptyState title="No announcements yet" description="Company announcements will show up here." />
+          <EmptyState title="No announcements found" description="Try different filters, or post your first announcement." />
         </div>
       ) : (
         <div className="space-y-3">
@@ -124,9 +185,31 @@ export default function Announcements() {
                     <Megaphone size={16} />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-body-strong">{item.title}</p>
-                    <p className="text-fine-print text-ink-muted48 mt-0.5">{formatDate(item.date)}</p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {item.featured && <Star size={13} className="text-warning fill-warning shrink-0" />}
+                      <p className="text-body-strong">{item.title}</p>
+                      <span className={`text-fine-print px-2 py-0.5 rounded-pill ${PRIORITY_STYLES[item.priority]}`}>
+                        {titleCase(item.priority)}
+                      </span>
+                      <span className="text-fine-print px-2 py-0.5 rounded-pill bg-canvas-parchment text-ink-muted48">
+                        {titleCase(item.category)}
+                      </span>
+                    </div>
+                    <p className="text-fine-print text-ink-muted48 mt-1">
+                      {formatDate(item.startDate)}
+                      {item.endDate && ` – ${formatDate(item.endDate)}`} • {audienceLabel(item)}
+                    </p>
                     <p className="text-caption text-ink-muted80 mt-2">{item.description}</p>
+                    {item.attachment && (
+                      <a
+                        href={`${import.meta.env.VITE_API_BASE_URL?.replace("/api", "")}${item.attachment}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-caption text-primary hover:underline mt-2"
+                      >
+                        <Paperclip size={13} /> View attachment
+                      </a>
+                    )}
                   </div>
                 </div>
                 {canManage && (
@@ -150,23 +233,19 @@ export default function Announcements() {
               </div>
             </div>
           ))}
+          <Pagination page={pagination.page} totalPages={pagination.totalPages} onChange={load} />
         </div>
       )}
 
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? "Edit Announcement" : "New Announcement"}>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <TextField label="Title" required value={form.title} error={errors.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
-          <TextAreaField label="Description" required rows={4} value={form.description} error={errors.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
-          <TextField label="Date" type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
-          <div className="flex justify-end gap-3 pt-2">
-            <Button type="button" variant="ghost" onClick={() => setModalOpen(false)} disabled={submitting}>
-              Cancel
-            </Button>
-            <Button type="submit" loading={submitting}>
-              {editing ? "Save changes" : "Post announcement"}
-            </Button>
-          </div>
-        </form>
+      <Modal open={modalOpen} onClose={closeModal} title={editing ? "Edit Announcement" : "New Announcement"} width="max-w-xl">
+        <AnnouncementForm
+          initialValues={editing}
+          branches={branches}
+          departments={departments}
+          onSubmit={handleSubmit}
+          onCancel={closeModal}
+          submitting={submitting}
+        />
       </Modal>
 
       <ConfirmDialog
